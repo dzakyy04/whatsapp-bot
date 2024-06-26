@@ -75,11 +75,17 @@ client.on('message', async (msg) => {
 
         // Handling command !khodam (get random khodam)
         if (msg.body.toLowerCase() === '!khodam') {
-            const chat = await msg.getChat();
             const contact = await msg.getContact();
             const senderName = contact.name || contact.pushname || contact.id.user;
             const khodam = getRandomKhodam();
-            await chat.sendMessage(`Khodam ${senderName} adalah *${khodam}*`);
+            await msg.reply(`Khodam ${senderName} adalah *${khodam}*`);
+        }
+
+        // Handling command !khodam <name> (get random khodam for <name></name>)
+        if (msg.body.toLowerCase().startsWith('!khodam ')) {
+            const name = msg.body.slice(8).trim();
+            const khodam = getRandomKhodam();
+            await msg.reply(`Khodam ${name} adalah *${khodam}*`);
         }
     } catch (error) {
         console.error('Error handling message:', error);
