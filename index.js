@@ -173,13 +173,13 @@ const handleRankCommand = async (msg) => {
 };
 
 const handleMenuCommand = async (msg) => {
-    const menuMessage = `*Daftar Command:*\n
-    1. ${COMMANDS.ALL} - Tag semua anggota grup.
-    2. ${COMMANDS.STICKER} - Mengonversi gambar menjadi stiker.
-    3. ${COMMANDS.KHODAM} - Cek khodam untuk pengirim.
-    4. ${COMMANDS.KHODAM} [nama] - Cek khodam untuk nama yang disebut.
-    5. ${COMMANDS.RANK} - Menampilkan top anggota grup berdasarkan jumlah chat.
-    6. ${COMMANDS.MENU} - Menampilkan daftar command.`;
+    const menuMessage = `*Daftar Command:*
+    1. *${COMMANDS.ALL}* - Tag semua anggota grup.
+    2. *${COMMANDS.STICKER}* - Mengonversi gambar menjadi stiker.
+    3. *${COMMANDS.KHODAM}* - Cek khodam untuk pengirim.
+    4. *${COMMANDS.KHODAM}* [nama] - Cek khodam untuk nama yang disebut.
+    5. *${COMMANDS.RANK}* - Menampilkan top anggota grup berdasarkan jumlah chat.
+    6. *${COMMANDS.MENU}* - Menampilkan daftar command.`;
 
     await msg.reply(menuMessage);
 };
