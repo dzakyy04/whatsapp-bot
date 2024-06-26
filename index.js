@@ -39,5 +39,30 @@ client.on('message', async (msg) => {
         await chat.sendMessage('@all', { mentions });
     }
 });
+client.on('message', async (msg) => {
+    // Convert to sticker
+    const convertToSticker = async (mediaMsg) => {
+        const media = await mediaMsg.downloadMedia();
+        await msg.reply(media, msg.from, { sendMediaAsSticker: true });
+    }
+
+    if (msg.body.toLocaleLowerCase() === '!sticker') {
+        // If message is reply
+        if (msg.hasQuotedMsg) {
+            const quotedMessage = await msg.getQuotedMessage();
+
+            // If replied message is an image
+            if (quotedMessage.type === 'image') {
+                await convertToSticker(quotedMessage);
+            } else {
+                await msg.reply('Balas ke sebuah gambar dengan command !sticker');
+            }
+        } else if (msg.type === 'image') {
+            await convertToSticker(msg);
+        } else {
+            await msg.reply('Kirim atau balas ke sebuah gambar dengan command !sticker');
+        }
+    }
+});
 
 client.initialize();
