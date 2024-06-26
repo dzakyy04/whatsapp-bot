@@ -29,16 +29,20 @@ const getRandomKhodam = () => {
     return khodams[randomIndex];
 };
 
-const updateChatCount = (senderId) => {
-    chatCounts[senderId] = (chatCounts[senderId] || 0) + 1;
+const updateChatCount = (groupId, senderId) => {
+    if (!chatCounts[groupId]) {
+        chatCounts[groupId] = {};
+    }
+    chatCounts[groupId][senderId] = (chatCounts[groupId][senderId] || 0) + 1;
 };
 
 const getTopMembers = async (chat, limit = 10) => {
+    const groupId = chat.id._serialized;
     const participants = await chat.participants;
     const topMembers = participants
         .map(participant => ({
             id: participant.id._serialized,
-            count: chatCounts[participant.id._serialized] || 0
+            count: chatCounts[groupId]?.[participant.id._serialized] || 0
         }))
         .filter(member => member.count > 0)
         .sort((a, b) => b.count - a.count)
@@ -76,7 +80,10 @@ const handleAuthFailure = (msg) => {
 
 const handleMessage = async (msg) => {
     try {
-        updateChatCount(msg.author || msg.from);
+        const chat = await msg.getChat();
+        if (chat.isGroup) {
+            updateChatCount(chat.id._serialized, msg.author || msg.from);
+        }
 
         const command = msg.body.toLowerCase();
 
