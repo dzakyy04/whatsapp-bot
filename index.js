@@ -1,5 +1,6 @@
 const { Client, LocalAuth } = require('whatsapp-web.js');
 const qrcode = require('qrcode-terminal');
+const khodams = require('./khodams');
 
 // Function to convert media to sticker
 const convertToSticker = async (msg) => {
@@ -10,6 +11,11 @@ const convertToSticker = async (msg) => {
         console.error('Failed to convert to sticker:', error);
         await msg.reply('Gagal mengonversi ke stiker.');
     }
+};
+
+const getRandomKhodam = () => {
+    const randomIndex = Math.floor(Math.random() * khodams.length);
+    return khodams[randomIndex];
 };
 
 const client = new Client({
@@ -65,6 +71,15 @@ client.on('message', async (msg) => {
             } else {
                 await msg.reply('Kirim atau balas ke sebuah gambar dengan command !sticker');
             }
+        }
+
+        // Handling command !khodam (get random khodam)
+        if (msg.body.toLowerCase() === '!khodam') {
+            const chat = await msg.getChat();
+            const contact = await msg.getContact();
+            const senderName = contact.name || contact.pushname || contact.id.user;
+            const khodam = getRandomKhodam();
+            await chat.sendMessage(`Khodam ${senderName} adalah *${khodam}*`);
         }
     } catch (error) {
         console.error('Error handling message:', error);
