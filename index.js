@@ -7,7 +7,8 @@ const COMMANDS = {
     ALL: '!all',
     STICKER: '!sticker',
     KHODAM: '!khodam',
-    RANK: '!rank'
+    RANK: '!rank',
+    MENU: '!menu'
 };
 
 // Chat count storage
@@ -97,6 +98,8 @@ const handleMessage = async (msg) => {
             await handleNamedKhodamCommand(msg);
         } else if (command === COMMANDS.RANK) {
             await handleRankCommand(msg);
+        } else if (command === COMMANDS.MENU) {
+            await handleMenuCommand(msg);
         }
     } catch (error) {
         console.error('Error handling message:', error);
@@ -167,6 +170,18 @@ const handleRankCommand = async (msg) => {
     }
 
     await msg.reply(rankMessage);
+};
+
+const handleMenuCommand = async (msg) => {
+    const menuMessage = `*Daftar Command:*\n
+    1. ${COMMANDS.ALL} - Tag semua anggota grup.
+    2. ${COMMANDS.STICKER} - Mengonversi gambar menjadi stiker.
+    3. ${COMMANDS.KHODAM} - Cek khodam untuk pengirim.
+    4. ${COMMANDS.KHODAM} [nama] - Cek khodam untuk nama yang disebut.
+    5. ${COMMANDS.RANK} - Menampilkan top anggota grup berdasarkan jumlah chat.
+    6. ${COMMANDS.MENU} - Menampilkan daftar command.`;
+
+    await msg.reply(menuMessage);
 };
 
 // Event listeners
