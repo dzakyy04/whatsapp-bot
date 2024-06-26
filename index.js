@@ -7,10 +7,10 @@ const client = new Client({
     webVersionCache: {
         type: 'remote',
         remotePath: 'https://raw.githubusercontent.com/wppconnect-team/wa-version/main/html/2.2412.54.html',
-    }
+    },
 });
 
-client.on('qr', (qr) => {
+client.on('qr', qr => {
     qrcode.generate(qr, { small: true });
 });
 
@@ -22,8 +22,22 @@ client.on('authenticated', () => {
     console.log('Client authenticated!');
 });
 
-client.on('disconnected', (reason) => {
-    console.log('Client is disconnected!', reason);
+client.on('auth_failure', msg => {
+    console.error('Authentication failure', msg);
+});
+
+client.on('message', async (msg) => {
+    if (msg.body.toLocaleLowerCase() === '!all') {
+        const chat = await msg.getChat();
+
+        let mentions = [];
+
+        for (let participant of chat.participants) {
+            mentions.push(`${participant.id.user}@c.us`);
+        }
+
+        await chat.sendMessage('@all', { mentions });
+    }
 });
 
 client.initialize();
