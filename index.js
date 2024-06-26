@@ -6,8 +6,12 @@ const khodams = require('./khodams');
 const COMMANDS = {
     ALL: '!all',
     STICKER: '!sticker',
-    KHODAM: '!khodam'
+    KHODAM: '!khodam',
+    RANK: '!rank'
 };
+
+// Chat count storage
+let chatCounts = {};
 
 // Helper functions
 const convertToSticker = async (msg) => {
@@ -23,6 +27,24 @@ const convertToSticker = async (msg) => {
 const getRandomKhodam = () => {
     const randomIndex = Math.floor(Math.random() * khodams.length);
     return khodams[randomIndex];
+};
+
+const updateChatCount = (senderId) => {
+    chatCounts[senderId] = (chatCounts[senderId] || 0) + 1;
+};
+
+const getTopMembers = async (chat, limit = 10) => {
+    const participants = await chat.participants;
+    const topMembers = participants
+        .map(participant => ({
+            id: participant.id._serialized,
+            count: chatCounts[participant.id._serialized] || 0
+        }))
+        .filter(member => member.count > 0)
+        .sort((a, b) => b.count - a.count)
+        .slice(0, limit);
+
+    return topMembers;
 };
 
 // Client configuration
@@ -54,6 +76,8 @@ const handleAuthFailure = (msg) => {
 
 const handleMessage = async (msg) => {
     try {
+        updateChatCount(msg.author || msg.from);
+
         const command = msg.body.toLowerCase();
 
         if (command === COMMANDS.ALL) {
@@ -64,6 +88,8 @@ const handleMessage = async (msg) => {
             await handleKhodamCommand(msg);
         } else if (command.startsWith(`${COMMANDS.KHODAM} `)) {
             await handleNamedKhodamCommand(msg);
+        } else if (command === COMMANDS.RANK) {
+            await handleRankCommand(msg);
         }
     } catch (error) {
         console.error('Error handling message:', error);
@@ -73,6 +99,11 @@ const handleMessage = async (msg) => {
 // Command handlers
 const handleAllCommand = async (msg) => {
     const chat = await msg.getChat();
+    if (!chat.isGroup) {
+        await msg.reply('Command ini hanya bisa digunakan dalam grup');
+        return;
+    }
+
     let mentions = chat.participants.map(participant => `${participant.id.user}@c.us`);
     await chat.sendMessage('@all', { mentions });
 };
@@ -103,6 +134,32 @@ const handleNamedKhodamCommand = async (msg) => {
     const name = msg.body.slice(COMMANDS.KHODAM.length + 1).trim();
     const khodam = getRandomKhodam();
     await msg.reply(`Khodam ${name} adalah *${khodam}*`);
+};
+
+const handleRankCommand = async (msg) => {
+    const chat = await msg.getChat();
+    if (!chat.isGroup) {
+        await msg.reply('Command ini hanya bisa digunakan dalam grup');
+        return;
+    }
+
+    const topMembers = await getTopMembers(chat);
+
+    if (topMembers.length === 0) {
+        await msg.reply('Belum ada anggota yang mengirim chat.');
+        return;
+    }
+
+    let rankMessage = '*Top anggota grup:*\n';
+
+    for (let i = 0; i < topMembers.length; i++) {
+        const member = topMembers[i];
+        const contact = await client.getContactById(member.id);
+        const name = contact.pushname || contact.name || member.id.split('@')[0];
+        rankMessage += `${i + 1}. ${name}: ${member.count} chat\n`;
+    }
+
+    await msg.reply(rankMessage);
 };
 
 // Event listeners
