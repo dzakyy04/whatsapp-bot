@@ -1,6 +1,25 @@
+const dotenv = require('dotenv');
+dotenv.config();
+
 const { Client, LocalAuth } = require('whatsapp-web.js');
 const qrcode = require('qrcode-terminal');
 const khodams = require('./khodams');
+const { initializeApp } = require('firebase/app');
+const { getFirestore, doc, setDoc, getDoc, updateDoc, increment } = require('firebase/firestore');
+
+// Firebase configuration
+const firebaseConfig = {
+    apiKey: process.env.FIREBASE_API_KEY,
+    authDomain: process.env.FIREBASE_AUTH_DOMAIN,
+    projectId: process.env.FIREBASE_PROJECT_ID,
+    storageBucket: process.env.FIREBASE_STORAGE_BUCKET,
+    messagingSenderId: process.env.FIREBASE_MESSAGING_SENDER_ID,
+    appId: process.env.FIREBASE_APP_ID
+};
+
+// Initialize Firebase
+const firebaseApp = initializeApp(firebaseConfig);
+const db = getFirestore(firebaseApp);
 
 // Constants
 const COMMANDS = {
@@ -10,9 +29,6 @@ const COMMANDS = {
     RANK: '!rank',
     MENU: '!menu'
 };
-
-// Chat count storage
-let chatCounts = {};
 
 // Helper functions
 const convertToSticker = async (msg) => {
@@ -30,26 +46,50 @@ const getRandomKhodam = () => {
     return khodams[randomIndex];
 };
 
-const updateChatCount = (groupId, senderId) => {
-    if (!chatCounts[groupId]) {
-        chatCounts[groupId] = {};
+const updateChatCount = async (groupId, senderId) => {
+    const groupRef = doc(db, 'groups', groupId);
+    const memberRef = doc(groupRef, 'members', senderId);
+
+    try {
+        // Ensure the group document exists
+        await setDoc(groupRef, { id: groupId }, { merge: true });
+        const memberDoc = await getDoc(memberRef);
+
+        if (memberDoc.exists()) {
+            await updateDoc(memberRef, {
+                chatCount: increment(1)
+            });
+        } else {
+            await setDoc(memberRef, {
+                chatCount: 1
+            });
+        }
+    } catch (error) {
+        console.error('Error updating chat count:', error);
     }
-    chatCounts[groupId][senderId] = (chatCounts[groupId][senderId] || 0) + 1;
 };
 
 const getTopMembers = async (chat, limit = 10) => {
     const groupId = chat.id._serialized;
+    const groupRef = doc(db, 'groups', groupId);
     const participants = await chat.participants;
-    const topMembers = participants
-        .map(participant => ({
-            id: participant.id._serialized,
-            count: chatCounts[groupId]?.[participant.id._serialized] || 0
-        }))
+
+    const topMembers = await Promise.all(
+        participants.map(async (participant) => {
+            const memberId = participant.id._serialized;
+            const memberRef = doc(groupRef, 'members', memberId);
+            const memberDoc = await getDoc(memberRef);
+            return {
+                id: memberId,
+                count: memberDoc.exists() ? memberDoc.data().chatCount || 0 : 0
+            };
+        })
+    );
+
+    return topMembers
         .filter(member => member.count > 0)
         .sort((a, b) => b.count - a.count)
         .slice(0, limit);
-
-    return topMembers;
 };
 
 // Client configuration
@@ -79,7 +119,7 @@ const handleMessage = async (msg) => {
     try {
         const chat = await msg.getChat();
         if (chat.isGroup) {
-            updateChatCount(chat.id._serialized, msg.author || msg.from);
+            await updateChatCount(chat.id._serialized, msg.author || msg.from);
         }
 
         const command = msg.body.toLowerCase();
