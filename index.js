@@ -56,10 +56,6 @@ const getTopMembers = async (chat, limit = 10) => {
 const client = new Client({
     authStrategy: new LocalAuth(),
     webVersion: '2.2412.54',
-    webVersionCache: {
-        type: 'remote',
-        remotePath: 'https://raw.githubusercontent.com/wppconnect-team/wa-version/main/html/2.2412.54.html',
-    },
 });
 
 // Event handlers
@@ -169,6 +165,7 @@ const handleRankCommand = async (msg) => {
         rankMessage += `${i + 1}. ${name}: ${member.count} chat\n`;
     }
 
+    rankMessage = rankMessage.trimEnd();
     await msg.reply(rankMessage);
 };
 
