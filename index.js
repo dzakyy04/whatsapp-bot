@@ -6,6 +6,7 @@ const qrcode = require('qrcode-terminal');
 const khodams = require('./khodams');
 const { initializeApp } = require('firebase/app');
 const { getFirestore, doc, setDoc, getDoc, updateDoc, increment } = require('firebase/firestore');
+const moment = require('moment');
 
 // Firebase configuration
 const firebaseConfig = {
@@ -27,7 +28,8 @@ const COMMANDS = {
     STICKER: '!sticker',
     KHODAM: '!khodam',
     RANK: '!rank',
-    MENU: '!menu'
+    MENU: '!menu',
+    REMINDER: '!reminder'
 };
 
 // Helper functions
@@ -136,6 +138,8 @@ const handleMessage = async (msg) => {
             await handleRankCommand(msg);
         } else if (command === COMMANDS.MENU) {
             await handleMenuCommand(msg);
+        } else if (command.startsWith(COMMANDS.REMINDER)) {
+            await handleReminderCommand(msg);
         }
     } catch (error) {
         console.error('Error handling message:', error);
@@ -216,9 +220,55 @@ const handleMenuCommand = async (msg) => {
     3. *${COMMANDS.KHODAM}* - Cek khodam untuk pengirim.
     4. *${COMMANDS.KHODAM}* [nama] - Cek khodam untuk nama yang disebut.
     5. *${COMMANDS.RANK}* - Menampilkan top anggota grup berdasarkan jumlah chat.
-    6. *${COMMANDS.MENU}* - Menampilkan daftar command.`;
+    6. *${COMMANDS.MENU}* - Menampilkan daftar command.
+    7. *${COMMANDS.REMINDER}* - Mengatur pengingat. Format: !reminder [hari ini/besok/tanggal DD-MM-YYYY] [jam:menit] [pesan]`;
 
     await msg.reply(menuMessage);
+};
+
+const handleReminderCommand = async (msg) => {
+    const parts = msg.body.split(' ');
+    if (parts.length < 4) {
+        await msg.reply('Format: !reminder [hari ini/besok/tanggal DD-MM-YYYY] [jam:menit] [pesan]');
+        return;
+    }
+
+    let date, time, message;
+
+    if (parts[1].toLowerCase() === 'hari' && parts[2].toLowerCase() === 'ini') {
+        date = moment().format('DD-MM-YYYY');
+        time = parts[3];
+        message = parts.slice(4).join(' ');
+    } else if (parts[1].toLowerCase() === 'besok') {
+        date = moment().add(1, 'days').format('DD-MM-YYYY');
+        time = parts[2];
+        message = parts.slice(3).join(' ');
+    } else {
+        date = parts[1];
+        time = parts[2];
+        message = parts.slice(3).join(' ');
+    }
+
+    const reminderTime = moment(`${date} ${time}`, 'DD-MM-YYYY HH:mm');
+
+    if (!reminderTime.isValid()) {
+        await msg.reply('Format tanggal atau waktu tidak valid.');
+        return;
+    }
+
+    const now = moment();
+    if (reminderTime.isBefore(now)) {
+        await msg.reply('Waktu pengingat harus di masa depan.');
+        return;
+    }
+
+    const delay = reminderTime.diff(now);
+
+    setTimeout(async () => {
+        await msg.reply(`Pengingat: ${message}`);
+    }, delay);
+
+    await msg.reply(`Pengingat diatur untuk ${reminderTime.format('DD-MM-YYYY HH:mm')}: ${message}`);
 };
 
 // Event listeners
