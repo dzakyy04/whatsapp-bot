@@ -13,21 +13,27 @@ A simple WhatsApp bot using [`whatsapp-web.js`](https://wwebjs.dev/).
 
 ## Requirements
 
-- Node.js (version 18 or higher)
+-   Node.js (version 18 or higher)
+-   A WhatsApp account
+-   Firebase account (for data storage)
 
 ## Installation
 
-1. Clone this repository:
+1.  Clone this repository:
 
-        git clone https://github.com/username/whatsapp-bot.git
+        git clone https://github.com/dzakyy04/whatsapp-bot.git
         cd whatsapp-bot
 
-2. Install the dependencies:
+2.  Install the dependencies:
 
         npm install
 
-3. Run the bot:
+3.  Copy the example env file and add your Firebase configuration in the `.env` file:
+
+        cp .env.example .env
+
+4.  Run the bot:
 
         npm start
 
-4. Scan the QR code displayed in the terminal using the WhatsApp application on your phone.
+5.  Scan the QR code displayed in the terminal using the WhatsApp application on your phone.
