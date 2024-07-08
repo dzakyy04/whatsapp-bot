@@ -1,5 +1,17 @@
 const { db } = require('./firebase');
-const { doc, setDoc, getDoc, updateDoc, increment } = require('firebase/firestore');
+const {
+    collection,
+    addDoc,
+    query,
+    where,
+    getDocs,
+    deleteDoc,
+    doc,
+    setDoc,
+    getDoc,
+    updateDoc,
+    increment
+} = require('firebase/firestore');
 const khodams = require('./khodams');
 
 const convertToSticker = async (msg) => {
@@ -62,9 +74,39 @@ const getTopMembers = async (chat, limit = 10) => {
         .slice(0, limit);
 };
 
+const addReminder = async (chatId, time, message) => {
+    try {
+        await addDoc(collection(db, 'reminders'), {
+            chatId,
+            time: time.toDate(),
+            message
+        });
+    } catch (error) {
+        console.error('Error adding reminder:', error);
+    }
+};
+
+const getActiveReminders = async (chatId) => {
+    const remindersRef = collection(db, 'reminders');
+    const q = query(remindersRef, where('chatId', '==', chatId), where('time', '>', new Date()));
+    const querySnapshot = await getDocs(q);
+    return querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+};
+
+const removeReminder = async (reminderId) => {
+    try {
+        await deleteDoc(doc(db, 'reminders', reminderId));
+    } catch (error) {
+        console.error('Error removing reminder:', error);
+    }
+};
+
 module.exports = {
     convertToSticker,
     getRandomKhodam,
     updateChatCount,
-    getTopMembers
+    getTopMembers,
+    addReminder,
+    getActiveReminders,
+    removeReminder
 };

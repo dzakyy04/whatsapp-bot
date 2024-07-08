@@ -7,7 +7,8 @@ const {
     handleNamedKhodamCommand,
     handleRankCommand,
     handleMenuCommand,
-    handleReminderCommand
+    handleReminderCommand,
+    handleListReminderCommand
 } = require('./commandHandlers');
 
 const handleMessage = async (msg) => {
@@ -33,6 +34,8 @@ const handleMessage = async (msg) => {
             await handleRankCommand(msg);
         } else if (command.startsWith(COMMANDS.REMINDER)) {
             await handleReminderCommand(msg);
+        } else if (command === COMMANDS.LISTREMINDER) {
+            await handleListReminderCommand(msg);
         }
     } catch (error) {
         console.error('Error handling message:', error);

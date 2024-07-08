@@ -1,6 +1,13 @@
 const moment = require('moment');
 const COMMANDS = require('../commands');
-const { convertToSticker, getRandomKhodam, getTopMembers } = require('../helpers');
+const {
+    convertToSticker,
+    getRandomKhodam,
+    getTopMembers,
+    addReminder,
+    getActiveReminders,
+    removeReminder
+} = require('../helpers');
 const client = require('../client');
 
 const handleMenuCommand = async (msg) => {
@@ -11,7 +18,8 @@ const handleMenuCommand = async (msg) => {
     4. *${COMMANDS.KHODAM}* - Cek khodam untuk pengirim.
     5. *${COMMANDS.KHODAM} [nama]* - Cek khodam untuk nama yang disebut.
     6. *${COMMANDS.RANK}* - Menampilkan top anggota grup berdasarkan jumlah chat.
-    7. *${COMMANDS.REMINDER}* - Mengatur pengingat. Format: !reminder [hari ini/besok/tanggal DD-MM-YYYY] [jam:menit] [pesan]`;
+    7. *${COMMANDS.REMINDER}* - Mengatur pengingat. Format: !reminder [hari ini/besok/tanggal DD-MM-YYYY] [jam:menit] [pesan]
+    8. *${COMMANDS.LISTREMINDER}* - Menampilkan daftar pengingat aktif.`;
 
     await msg.reply(menuMessage);
 };
@@ -120,11 +128,31 @@ const handleReminderCommand = async (msg) => {
 
     const delay = reminderTime.diff(now);
 
+    await addReminder(msg.from, reminderTime, message);
+
     setTimeout(async () => {
         await msg.reply(`Pengingat: ${message}`);
+        await removeReminder(msg.from, reminderTime);
     }, delay);
 
     await msg.reply(`Pengingat diatur untuk ${reminderTime.format('DD-MM-YYYY HH:mm')}: ${message}`);
+};
+
+const handleListReminderCommand = async (msg) => {
+    const reminders = await getActiveReminders(msg.from);
+
+    if (reminders.length === 0) {
+        await msg.reply('Tidak ada pengingat aktif saat ini.');
+        return;
+    }
+
+    let reminderList = '*Daftar Pengingat Aktif:*\n';
+    reminders.forEach((reminder, index) => {
+        const reminderDate = new Date(reminder.time.seconds * 1000);
+        reminderList += `${index + 1}. ${moment(reminderDate).format('DD-MM-YYYY HH:mm')}: ${reminder.message}\n`;
+    });
+
+    await msg.reply(reminderList);
 };
 
 module.exports = {
@@ -134,5 +162,6 @@ module.exports = {
     handleNamedKhodamCommand,
     handleRankCommand,
     handleMenuCommand,
-    handleReminderCommand
+    handleReminderCommand,
+    handleListReminderCommand
 };

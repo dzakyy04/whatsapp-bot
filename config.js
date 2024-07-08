@@ -13,6 +13,7 @@ module.exports = {
         STICKER: '!sticker',
         KHODAM: '!khodam',
         RANK: '!rank',
-        REMINDER: '!reminder'
+        REMINDER: '!reminder',
+        LISTREMINDER: '!listreminder'
     }
 };
